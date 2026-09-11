@@ -1,0 +1,2586 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "UAE InvoiceQ API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://uaestaging.invoiceq.com",
+      "description": "sandbox"
+    }
+  ],
+  "paths": {
+    "/api/auth": {
+      "post": {
+        "operationId": "login",
+        "summary": "Start and get your bearer token",
+        "tags": [
+          "API Authorization"
+        ],
+        "description": "Start and get your bearer token, Note all arguments are Case-Sensitive",
+        "parameters": [
+          {
+            "name": "orgKey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization key"
+          },
+          {
+            "name": "apiKey",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "API key"
+          },
+          {
+            "name": "channelId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Channel identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/external/v1/credit-note/download/by-invoiceq-reference/{invoiceqReference}": {
+      "get": {
+        "operationId": "downloadCreditNote",
+        "summary": "Download Credit Note PDF",
+        "tags": [
+          "Credit Note Management"
+        ],
+        "description": "Download Credit Note as base64 string",
+        "parameters": [
+          {
+            "name": "invoiceqReference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Credit note reference issued by invoiceq on create the credit note"
+          },
+          {
+            "name": "responseTemplate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PDF_A3",
+                "XML",
+                "QR",
+                "NONE",
+                "QRANDXML"
+              ],
+              "example": "PDF_A3"
+            },
+            "description": "Response template of the downloaded credit note"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteOperationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/credit-note/refundAll": {
+      "post": {
+        "operationId": "refundAllCreditNote",
+        "summary": "Refund All Credit Note",
+        "tags": [
+          "Credit Note Management"
+        ],
+        "description": "Fully refund an invoice by issuing a credit note that covers its full amount",
+        "parameters": [
+          {
+            "name": "creditNoteMode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AMOUNT",
+                "AMOUNT_WITH_COUNT",
+                "AMOUNT_WITH_QUANTITY"
+              ]
+            },
+            "description": "Refund all credit note mode"
+          },
+          {
+            "name": "subReference",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sub reference of the invoice to fully refund"
+          },
+          {
+            "name": "majorReference",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Major reference of the invoice to fully refund"
+          },
+          {
+            "name": "responseTemplate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PDF_A3",
+                "XML",
+                "QR",
+                "NONE",
+                "QRANDXML"
+              ],
+              "example": "PDF_A3"
+            },
+            "description": "Response template of the issued credit note"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteOperationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/credit-note/search": {
+      "post": {
+        "operationId": "searchCreditNote",
+        "summary": "Filter uploaded credit notes",
+        "tags": [
+          "Credit Note Management"
+        ],
+        "description": "Search and retrieve credit notes using any of following fields :<br>**creditNoteNumber** : Originating system reference provided on create the credit note, **with supported operators : [EQUALS]**<br>**invoiceqReference** : Credit note reference issued by invoiceq on create the credit note, **with supported operators : [EQUALS]**<br>**invoiceIQReference** : Invoice reference number issued by invoiceq on create invoice, **with supported operators : [EQUALS]**<br>**invoiceStatus** : Invoice integration status, **with supported operator: [EQUALS]**, and **supported values: [CLEARED, UNCLEARED, PENDING]** If not provided, the search will default to <b>CLEARED</b> invoices.",
+        "parameters": [
+          {
+            "name": "responseTemplate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PDF_A3",
+                "XML",
+                "QR",
+                "NONE",
+                "QRANDXML"
+              ],
+              "example": "QR"
+            },
+            "description": "Response template of the returned credit notes"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v2/credit-note/create": {
+      "post": {
+        "operationId": "createCreditNoteV2",
+        "summary": "Create Credit Note (V2)",
+        "tags": [
+          "Credit Note Management"
+        ],
+        "description": "Refund Invoice",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditNote"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteOperationResponse"
+                }
+              }
+            }
+          },
+          "208": {
+            "description": "Already reported, a document with the same reference was uploaded before. When the channel uses RETRIEVE_DUPLICATE_DETAILS the existing document details are returned in the body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteOperationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/lookups/exemptions": {
+      "get": {
+        "operationId": "listExemptions",
+        "summary": "List Tax Exemptions codes as per corporate country",
+        "tags": [
+          "Lookups Listing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExemptionsListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExemptionsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/lookups/tax-categories": {
+      "get": {
+        "operationId": "listTaxCategories",
+        "summary": "List Tax categories as per corporate country",
+        "tags": [
+          "Lookups Listing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/lookups/allowances": {
+      "get": {
+        "operationId": "listAllowances",
+        "summary": "List Allowances code",
+        "tags": [
+          "Lookups Listing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllowanceListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllowanceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/lookups/charges": {
+      "get": {
+        "operationId": "listCharges",
+        "summary": "List Charges code",
+        "tags": [
+          "Lookups Listing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllowanceListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllowanceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/outward-invoice/download/by-invoiceq-reference/{invoiceqReference}": {
+      "get": {
+        "operationId": "downloadOutwardInvoice",
+        "summary": "Download Outward Invoice PDF",
+        "tags": [
+          "Outward Invoice Management"
+        ],
+        "description": "Download Outward Invoice as base64 string",
+        "parameters": [
+          {
+            "name": "invoiceqReference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Invoice reference issued by invoiceq on create the invoice"
+          },
+          {
+            "name": "responseTemplate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PDF_A3",
+                "XML",
+                "QR",
+                "NONE",
+                "QRANDXML"
+              ],
+              "example": "PDF_A3"
+            },
+            "description": "Response template of the downloaded invoice"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutwardInvoiceOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutwardInvoiceOperationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v1/outward-invoice/search": {
+      "post": {
+        "operationId": "searchOutwardInvoice",
+        "summary": "Filter uploaded invoices",
+        "tags": [
+          "Outward Invoice Management"
+        ],
+        "description": "Search and retrieve for invoices using any of following fields :<br>**invoiceqReference** : Invoice reference provided by invoiceq on create the invoice, **with supported operators : [EQUALS]**<br>**invoiceNumber** : Originating system reference provided on create the invoice , **with supported operators : [EQUALS]**<br>**totalInvoiceAmount** : TotalInvoiceAmount provided on create the invoice, **with supported operators : [EQUALS, GREATER_THAN, LESS_THAN]**<br>**invoiceStatus** : Invoice integration status, **with supported operator: [EQUALS]**, and **supported values: [CLEARED, UNCLEARED, PENDING]** If not provided, the search will default to <b>CLEARED</b> invoices.",
+        "parameters": [
+          {
+            "name": "responseTemplate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PDF_A3",
+                "XML",
+                "QR",
+                "NONE",
+                "QRANDXML"
+              ],
+              "example": "QR"
+            },
+            "description": "Response template of the returned invoices"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FilterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutwardInvoiceSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutwardInvoiceSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/external/v2/outward-invoice/create": {
+      "post": {
+        "operationId": "createOutwardInvoiceV2",
+        "summary": "Create Outward Invoice",
+        "tags": [
+          "Outward Invoice Management"
+        ],
+        "description": "Upload Outward Invoice with attachments in base64string format",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutwardInvoice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutwardInvoiceOperationResponse"
+                }
+              }
+            }
+          },
+          "208": {
+            "description": "Already reported, a document with the same reference was uploaded before. When the channel uses RETRIEVE_DUPLICATE_DETAILS the existing document details are returned in the body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutwardInvoiceOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or business error, details are provided in the errors list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutwardInvoiceOperationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, session is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, the bearer token is expired or malformed"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelop"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AllowanceChargeResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "AllowanceListResponse": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "body": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllowanceChargeResponse"
+            }
+          }
+        }
+      },
+      "CreditNote": {
+        "type": "object",
+        "description": "Credit Note",
+        "properties": {
+          "invoiceIQReference": {
+            "type": "string",
+            "description": "InvoiceQ outward invoice reference of the invoice being credited. Required unless <code>creditReason</code> is <code>VD</code> (volume discount). When <code>creditReason</code> is <code>VD</code>, this field must be omitted so that no BillingReference is generated."
+          },
+          "invoiceType": {
+            "type": "string",
+            "description": "UAE credit note document type. Required when creditReason is <code>VD</code> because no original invoice is available to determine the document type.<br>Allowed values: STANDARD (tax credit note), COMMERCIAL (out-of-scope commercial credit note), or SELF_BILLING (self-billed credit note).",
+            "enum": [
+              "SIMPLE",
+              "NORMAL",
+              "STANDARD",
+              "SELF_BILLING",
+              "COMMERCIAL"
+            ]
+          },
+          "currencyIsoCode": {
+            "type": "string",
+            "description": "Currency in which all credit note amounts are stated, except amounts explicitly stated in the tax accounting currency.<br>Required when creditReason is <code>VD</code> because no original invoice is available to determine the currency. Use an [ISO 4217 alpha-3 currency code](https://www.iso.org/iso-4217-currency-codes.html), for example AED or USD.<br>When the currency is not AED, exchangeRate and totalTaxAmountInBaseCurrency are required.",
+            "enum": [
+              "JOD",
+              "USD",
+              "SAR",
+              "EGP",
+              "AED",
+              "BHD",
+              "QAR",
+              "EUR",
+              "KWD",
+              "OMR",
+              "YER",
+              "IQD",
+              "INR",
+              "HKD",
+              "GBP",
+              "CHF",
+              "SEK"
+            ]
+          },
+          "updatedCustomer": {
+            "$ref": "#/components/schemas/CustomerInfo"
+          },
+          "creditNoteMode": {
+            "type": "string",
+            "description": "For the AMOUNT credit mode will be on the total invoice amount as it will credit a specific amount from the total invoice amount only; no quantities or items can be credited here just a certain amount from the total amount. <br>For the AMOUNT_WITH_QUANTITY mode will be to credit a specific quantity or amount from the chosen item/s - the credit note will contain the credited amount or quantity from each invoice item",
+            "enum": [
+              "AMOUNT",
+              "AMOUNT_WITH_QUANTITY",
+              "AMOUNT_WITH_COUNT"
+            ]
+          },
+          "creditNoteNumber": {
+            "type": "string",
+            "description": "Unique credit note reference number as per originating system, incase duplicate will be rejected"
+          },
+          "narration": {
+            "type": "string",
+            "description": "Credit note narration, incase not provided will be defaulted to Credit Note"
+          },
+          "poReference": {
+            "type": "string",
+            "description": "Purchase Order Reference Number"
+          },
+          "identifierCode": {
+            "type": "string",
+            "description": "Corporate Identification Code Registered previously in InvoiceQ"
+          },
+          "customFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomAttribute"
+            },
+            "description": "List of custom fields identified using the portal, <br>1.Must not contain duplicate attributeCode, <br> 2.Required/Optional will be validated based on definition in the portal"
+          },
+          "issueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z, if not provided will be current date time"
+          },
+          "supplyDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "zoned datetime for the supply date or supply start date incase of supply over period <br>format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-09-02T18:23:00Z"
+          },
+          "supplyEndDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "[Conditional] - Required for of supply over periods <br>zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-09-02T18:23:00Z"
+          },
+          "creditReason": {
+            "type": "string",
+            "description": "Credit note reason code. Required. One of: DL8.61.1.A, DL8.61.1.B, DL8.61.1.C, DL8.61.1.D, DL8.61.1.E, VD.",
+            "enum": [
+              "DL8.61.1.A",
+              "DL8.61.1.B",
+              "DL8.61.1.C",
+              "DL8.61.1.D",
+              "DL8.61.1.E",
+              "VD"
+            ]
+          },
+          "creditProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditProduct"
+            },
+            "description": "List of refunded products"
+          },
+          "noteLevelAllowances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelAllowance"
+            },
+            "description": "Document-level allowances (PINT CreditNote/AllowanceCharge). Amounts excluding VAT."
+          },
+          "noteLevelCharges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelCharge"
+            },
+            "description": "Document-level charges (PINT CreditNote/AllowanceCharge). Amounts excluding VAT."
+          },
+          "totalTaxAmount": {
+            "type": "number",
+            "description": "Total VAT credited across lines. Must equal the sum of creditedTaxAmount (within rounding tolerance).",
+            "format": "double"
+          },
+          "totalCreditNetAmount": {
+            "type": "number",
+            "description": "Total credit note net amount including VAT. Same as creditAmountWithAllowanceAndCharge. Note-level allowances and charges are reflected in creditAmountWithAllowanceAndCharge.",
+            "format": "double"
+          },
+          "creditAmountWithAllowanceAndCharge": {
+            "type": "number",
+            "description": "Total credit note amount including VAT, after note-level allowances and charges. Required. Must equal Σ creditedNetAmount − Σ note-level allowances (gross) + Σ note-level charges (gross) (within rounding tolerance).",
+            "format": "double"
+          },
+          "payableRoundingAmount": {
+            "type": "number",
+            "description": "Payable Rounding Amount",
+            "format": "double"
+          },
+          "exchangeRate": {
+            "type": "number",
+            "description": "Required when the credit note currency is not AED. Exchange rate from credit note currency to AED.",
+            "format": "double"
+          },
+          "totalTaxAmountInBaseCurrency": {
+            "type": "number",
+            "description": "Total credit note tax amount in AED (UAE base currency). Required when the credit note currency is not AED.",
+            "format": "double"
+          },
+          "attachmentBase64": {
+            "type": "string",
+            "description": "Supporting document jpg or png image file to be shared with customer, should be Base64 string"
+          },
+          "attachmentFileType": {
+            "type": "string",
+            "description": "Supporting document file type, must be provided incase invoiceAttachmentBase64 has value, <u>note this is not the requested response format</u>",
+            "enum": [
+              "JPEG",
+              "PNG",
+              "JPG",
+              "PDF"
+            ]
+          },
+          "extraPrintDetails": {
+            "type": "string",
+            "description": "Extra print details to be used integrated layout."
+          },
+          "isDisclosedAgentBilling": {
+            "type": "boolean",
+            "description": "Whether the credit note uses disclosed agent billing. Defaults to false. When true, principalTaxNumber is required and must differ from the seller TRN."
+          },
+          "principalTaxNumber": {
+            "type": "string",
+            "description": "Principal tax registration number for disclosed agent billing. Must be exactly 15 digits, start with 1, and end with 03."
+          }
+        },
+        "required": [
+          "updatedCustomer",
+          "creditNoteNumber",
+          "issueDate",
+          "creditReason",
+          "creditProducts",
+          "creditAmountWithAllowanceAndCharge"
+        ]
+      },
+      "CreditNoteList": {
+        "type": "object",
+        "description": "Credit Note Search Response",
+        "properties": {
+          "invoiceIQReference": {
+            "type": "string",
+            "description": "InvoiceQ Outward Invoice reference number issued on create invoice"
+          },
+          "invoiceqReference": {
+            "type": "string",
+            "description": "Unique credit note reference number generated by invoiceq when credit note created"
+          },
+          "creditNoteNumber": {
+            "type": "string",
+            "description": "Unique credit note reference number as per originating system, incase duplicate will be rejected"
+          },
+          "narration": {
+            "type": "string",
+            "description": "Credit note narration,  incase not provided will be defaulted to Credit Note"
+          },
+          "creditProducts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditProduct"
+            },
+            "description": "List of refunded products"
+          },
+          "customFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomAttribute"
+            },
+            "description": "List of custom fields "
+          },
+          "integrationStatus": {
+            "type": "string",
+            "description": "Thrid Party Integration Status"
+          },
+          "totalTaxAmountInBaseCurrency": {
+            "type": "number",
+            "description": "Total tax amount collected from customer and should be in country base currency (i.e. SAR for invoices issued by Saudi Arabia Corporates, JOD for invoices issued by Jordanian corporates). <br><u>Conditional</u> incase the invoice issued using currency different than Country base currency , then this would be required<br>totalTaxAmountInBaseCurrency can be rounded optionally to number of decimals of country base currency",
+            "format": "double"
+          },
+          "base64PDF": {
+            "type": "string",
+            "description": "Generated Invoice PDF"
+          },
+          "encodedXml": {
+            "type": "string",
+            "description": "Generated Xml Invoice"
+          },
+          "qrCode": {
+            "type": "string",
+            "description": "Generated Qr Code"
+          }
+        },
+        "required": [
+          "creditNoteNumber",
+          "creditProducts"
+        ]
+      },
+      "CreditNoteOperationResponse": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "body": {
+            "$ref": "#/components/schemas/CreditNoteResponse"
+          }
+        }
+      },
+      "CreditNoteResponse": {
+        "type": "object",
+        "description": "CreditNote response would be provided for successful uploads, incase of any failuer this would be null",
+        "properties": {
+          "invoiceqReference": {
+            "type": "string",
+            "description": "InvoiceQ reference for uploaded credit note"
+          },
+          "creditNoteNumber": {
+            "type": "string",
+            "description": "Credit Note Number provided by customer on creation request"
+          },
+          "pdfFileName": {
+            "type": "string",
+            "description": "Generated Credit Note PDF Filename"
+          },
+          "base64PDF": {
+            "type": "string",
+            "description": "Generated Credit Note PDF"
+          },
+          "encodedXml": {
+            "type": "string",
+            "description": "Generated Xml Invoice"
+          },
+          "qrCode": {
+            "type": "string",
+            "description": "Generated Qr Code"
+          },
+          "directLink": {
+            "type": "string",
+            "description": "Credit Note Download Link"
+          },
+          "duplicateNotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditNoteList"
+            },
+            "description": "Previously reported notes with same number"
+          },
+          "submittedPayableAmount": {
+            "type": "number",
+            "description": "Submitted Payable Amount for Tax Authority",
+            "format": "double"
+          },
+          "submittedTaxAmount": {
+            "type": "number",
+            "description": "Submitted Tax Amount for Tax Authority",
+            "format": "double"
+          },
+          "submittedPayableRoundingAmount": {
+            "type": "number",
+            "description": "Submitted Payable Rounding Amount for Tax Authority",
+            "format": "double"
+          },
+          "integrationStatus": {
+            "type": "string",
+            "description": "Third Party Integration Status"
+          }
+        }
+      },
+      "CreditNoteSearchResponse": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "body": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditNoteList"
+            }
+          },
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSize": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CreditProduct": {
+        "type": "object",
+        "description": "Credit Note Product Lines",
+        "properties": {
+          "productCode": {
+            "type": "string",
+            "description": "Refunded Item code as per outward invoice"
+          },
+          "description": {
+            "type": "string",
+            "description": "Refunded Item description"
+          },
+          "creditedQuantity": {
+            "type": "number",
+            "description": "Credited quantity for the line. Must not be negative and must not exceed remaining un-refunded quantity on the original invoice.",
+            "format": "double"
+          },
+          "taxPercentage": {
+            "type": "integer",
+            "description": "VAT rate percent for the credited line. Must match taxType: S = 5, Z = 0, N > 0. For E, O, and AE use 0 unless otherwise required by the category rules.",
+            "format": "int32"
+          },
+          "creditDiscountAmount": {
+            "type": "number",
+            "description": "Price-level discount on this credited line. Line-total excluding VAT. Pass 0 when unused. Do not also send the same amount as lineAllowances.",
+            "format": "double"
+          },
+          "creditedNetAmount": {
+            "type": "number",
+            "description": "Net credit amount for the line including VAT. Must equal ((creditedQuantity × unitCost) − creditDiscountAmount − Σ lineAllowances + Σ lineCharges) × (1 + (taxPercentage / 100)) when those fields are provided.",
+            "format": "double"
+          },
+          "creditedTaxAmount": {
+            "type": "number",
+            "description": "Credited line VAT amount. Must be greater than zero for taxType S. Must be zero for taxType AE, Z, and N (and typically zero for E/O).",
+            "format": "double"
+          },
+          "lineAllowances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelAllowance"
+            },
+            "description": "Allowances on this credited line (PINT CreditNoteLine/AllowanceCharge). Amounts excluding VAT. Distinct from creditDiscountAmount (price-level)."
+          },
+          "lineCharges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelCharge"
+            },
+            "description": "Charges on this credited line (PINT CreditNoteLine/AllowanceCharge). Amounts excluding VAT."
+          },
+          "unitType": {
+            "type": "string",
+            "description": "Unit of measurement code for the credited line. Recommended to follow UN/ECE Recommendation 20."
+          },
+          "taxType": {
+            "type": "string",
+            "description": "PINT AE VAT category for the credited line. Optional override; when omitted InvoiceQ resolves from the original invoice line or catalog item. Allowed: S, E, O, AE, Z, N. Margin scheme requires N; commercial (480) allows O, E, or Z only. Non-commercial documents need at least one S, Z, AE, or N line. For AE, natureCode and standardItemId (GTIN) must exist on the catalog item.",
+            "enum": [
+              "S",
+              "E",
+              "O",
+              "AE",
+              "Z",
+              "N"
+            ]
+          },
+          "invoiceIQReference": {
+            "type": "string",
+            "description": "Original InvoiceQ invoice reference for this credited line when the credit spans multiple invoices."
+          },
+          "exemptionReasonCode": {
+            "type": "string",
+            "description": "VAT exemption reason code. Required only when taxType is E (exempt); use DL8.46.1–DL8.46.4 from '/api/external/v1/lookups/exemptions'. Do not send for Z (zero-rated), AE, S, O, or N. May fall back to the original invoice line reason when omitted."
+          },
+          "productName": {
+            "type": "string",
+            "description": "Refunded item name as shown on the credit note."
+          },
+          "lineCustomFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomAttribute"
+            },
+            "description": "List of custom fields identified using the portal, <br>1.Must not contain duplicate attributeCode, <br> 2.Required/Optional will be validated based on definition in the portal"
+          }
+        },
+        "required": [
+          "productCode",
+          "description",
+          "creditedQuantity",
+          "creditDiscountAmount",
+          "creditedNetAmount",
+          "creditedTaxAmount",
+          "unitType"
+        ]
+      },
+      "CustomAttribute": {
+        "type": "object",
+        "properties": {
+          "attributeCode": {
+            "type": "string",
+            "description": "Attribute code as it configured in the portal of same type"
+          },
+          "attributeValue": {
+            "type": "string",
+            "description": "Attribute value always string"
+          }
+        },
+        "required": [
+          "attributeCode"
+        ]
+      },
+      "CustomerInfo": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "description": "How InvoiceQ should handle customer incase already known to InvoiceQ database, reference will be the used key to determine if customer already saved in InvoiceQ DB or not. USE_SAVED: if the customer exists, reuse saved data; if not found, create from this request. UPDATE_IF_EXISTS: if the customer exists, update it from this request; if not found, create. Default USE_SAVED.",
+            "enum": [
+              "USE_SAVED",
+              "UPDATE_IF_EXISTS"
+            ]
+          },
+          "customerCode": {
+            "type": "string",
+            "description": "Originating system reference and would be used as unique identification for each customer"
+          },
+          "englishName": {
+            "type": "string",
+            "description": "Customer English name."
+          },
+          "arabicName": {
+            "type": "string",
+            "description": "Customer Arabic name. Required for domestic UAE buyers (countryIsoCode ARE/AE). Optional for export invoices to a non-UAE buyer."
+          },
+          "entitySchemeId": {
+            "type": "string",
+            "description": "Legal registration identifier type for the commercial registration number. Required for domestic UAE buyers (countryIsoCode ARE/AE). One of: TL = Commercial/Trade license, EID = Emirates ID, PAS = Passport, CD = Cabinet Decision. Not required for export invoices to a non-UAE buyer (foreign CompanyID may be sent without a UAE scheme).",
+            "enum": [
+              "TL",
+              "EID",
+              "PAS",
+              "CD"
+            ]
+          },
+          "registrationNumber": {
+            "type": "string",
+            "description": "Buyer legal registration / company identifier. For domestic UAE buyers (countryIsoCode ARE/AE): the commercial registration number issued in the UAE (pair with entitySchemeId TL, EID, PAS, or CD). For export invoices to a non-UAE buyer: the foreign company registration id when available (e.g. CompanyID on PartyLegalEntity). Also required for commercial (out-of-scope) invoices."
+          },
+          "entityTaxNumber": {
+            "type": "string",
+            "description": "Buyer Tax Registration Number (TRN). Applies to domestic UAE taxable buyers (countryIsoCode ARE/AE). Required when any line uses reverse charge (taxType AE). Not typically used for export invoices to a non-UAE buyer."
+          },
+          "authorityName": {
+            "type": "string",
+            "description": "Issuing authority name for the commercial/trade license. Required for domestic UAE buyers when entitySchemeId is TL. Not applicable to typical export buyers."
+          },
+          "beneficiaryId": {
+            "type": "string",
+            "description": "Beneficiary identifier for the customer. Required for free trade zone scenarios."
+          },
+          "peppolSchemaId": {
+            "type": "string",
+            "description": "Peppol scheme ID for the buyer EndpointID. When provided, customerInfo.peppolParticipantId is required. When InvoiceQ applies a predefined participant ID, it automatically uses scheme ID 0235; callers should omit both Peppol endpoint fields for those fallback scenarios."
+          },
+          "peppolParticipantId": {
+            "type": "string",
+            "description": "Peppol participant ID for the buyer EndpointID. When provided, customerInfo.peppolSchemaId is required. When neither Peppol endpoint field is provided, InvoiceQ automatically applies scheme ID 0235 and the applicable predefined participant ID: 9900000097 for deemed supply; 9900000099 when isExportInvoice is true; or 9900000098 for a UAE buyer (countryIsoCode AE/ARE), representing a buyer not subject to UAE e-invoicing regulations. For other non-UAE, non-export, non-deemed-supply customers, this field is required."
+          },
+          "countryIsoCode": {
+            "type": "string",
+            "description": "Buyer country ISO 3166-1 alpha-3 code. Use ARE (or AE) for domestic UAE buyers. For export invoices use the foreign buyer country (e.g. AUS)."
+          },
+          "provinceCode": {
+            "type": "string",
+            "description": "Country subentity for the buyer postal address. For domestic UAE buyers (countryIsoCode ARE/AE): required emirate code, one of AUH, DXB, SHJ, UAQ, FUJ, AJM, RAK. For export invoices to a non-UAE buyer: foreign region/state code (e.g. WA)."
+          },
+          "city": {
+            "type": "string",
+            "description": "City of the buyer postal address (e.g. Dubai for domestic, Perth for export)."
+          },
+          "area": {
+            "type": "string",
+            "description": "District, area, or additional street name of the buyer postal address."
+          },
+          "street": {
+            "type": "string",
+            "description": "Street name of the buyer postal address."
+          },
+          "bldgNo": {
+            "type": "string",
+            "description": "Building number of the buyer postal address when applicable."
+          },
+          "pobox": {
+            "type": "string",
+            "description": "Postal code / postal zone of the buyer address."
+          },
+          "additionalNo": {
+            "type": "string",
+            "description": "Four digit number."
+          },
+          "deliveryAddress": {
+            "$ref": "#/components/schemas/DeliveryAddressDetails"
+          }
+        },
+        "required": [
+          "mode",
+          "customerCode",
+          "englishName",
+          "countryIsoCode",
+          "city",
+          "street"
+        ]
+      },
+      "DeliveryAddressDetails": {
+        "type": "object",
+        "description": "Deliver-to address (IBG-15), not the buyer postal address. Conditional — see Oman field overrides.",
+        "properties": {
+          "country": {
+            "type": "string",
+            "description": "Country of the delivery address."
+          },
+          "city": {
+            "type": "string",
+            "description": "City of the delivery address."
+          },
+          "street": {
+            "type": "string",
+            "description": "Street of the delivery address."
+          },
+          "area": {
+            "type": "string",
+            "description": "Area or district of the delivery address."
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Postal code of the delivery address."
+          },
+          "pobox": {
+            "type": "string",
+            "description": "PO box of the delivery address."
+          },
+          "buildingNumber": {
+            "type": "string",
+            "description": "Building number of the delivery address."
+          },
+          "provinceCode": {
+            "type": "string",
+            "description": "Country subentity of the delivery address. When delivery country is AE/ARE: emirate code (AUH, DXB, SHJ, UAQ, FUJ, AJM, RAK). For non-UAE delivery: foreign region/state code."
+          }
+        }
+      },
+      "ExemptionDetails": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "description": "Exemption reason code as need to be passed in other API"
+          },
+          "reasonDescription": {
+            "type": "string",
+            "description": "Exemption tax description and reason to use"
+          },
+          "rate": {
+            "type": "integer",
+            "description": "Exemption rate of assigned line tax",
+            "format": "int32"
+          }
+        }
+      },
+      "ExemptionsListResponse": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "body": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExemptionDetails"
+            }
+          }
+        }
+      },
+      "Filter": {
+        "type": "object",
+        "properties": {
+          "fieldName": {
+            "type": "string",
+            "description": "Represent the field you want to filter against.<br>You can use the following fields to filter outward invoices: dueDate, issueDate, createdOn, and dueAmount.<br>You can use the following fields to filter payments: paymentDate, paymentReference."
+          },
+          "operator": {
+            "type": "string",
+            "description": "The operator used to filter against field",
+            "enum": [
+              "GREATER_THAN",
+              "GREATER_THAN_EQUAL",
+              "LESS_THAN",
+              "LESS_THAN_EQUAL",
+              "EQUALS",
+              "LIKE",
+              "NOT_EQ",
+              "IN",
+              "IS_NULL",
+              "NOT_NULL"
+            ]
+          },
+          "firstValue": {
+            "type": "string",
+            "description": "The value you want to filter against, even for numbers should be string format "
+          }
+        },
+        "required": [
+          "fieldName",
+          "operator",
+          "firstValue"
+        ]
+      },
+      "FilterRequest": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Filter"
+            },
+            "description": "List of filters, to execute the search"
+          },
+          "pageIndex": {
+            "type": "integer",
+            "description": "page number starting from 0 for first page",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "page size , by default it is 20",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "filters"
+        ]
+      },
+      "InvoiceLevelAllowance": {
+        "type": "object",
+        "description": "Allowances on Invoice/Note Level",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount excluding VAT. On invoiceLevelAllowances / noteLevelAllowances: this document-level allowance amount. On lineAllowances: this line's allowance amount. Not a per-tax-rate total of all lines.",
+            "format": "double"
+          },
+          "taxRate": {
+            "type": "integer",
+            "description": "Do not send on invoice/note-level lists. Derived from taxType (S = 5, E/O/Z/AE = 0). Ignored if provided. On lineAllowances, omit or pass the line taxPercentage.",
+            "format": "int32"
+          },
+          "taxType": {
+            "type": "string",
+            "description": "PINT AE VAT category for invoice/note-level allowances. Required on invoiceLevelAllowances / noteLevelAllowances. Ignored on lineAllowances (the line taxType applies). Allowed: S, E, O, AE, Z. N (margin scheme) is not allowed (ibr-115-ae). Must match a line taxType on the same document. E requires exemptionCode. Z/AE do not.",
+            "enum": [
+              "S",
+              "E",
+              "O",
+              "AE",
+              "Z"
+            ]
+          },
+          "exemptionCode": {
+            "type": "string",
+            "description": "The exemption code for zero or exempted tax rate that granted allowance"
+          },
+          "allowanceCode": {
+            "type": "string",
+            "description": "<b>Required</b> Allowance Code based on UNTDID 5189 code list, can be obtained <br>using lookups API"
+          }
+        },
+        "required": [
+          "amount",
+          "taxType",
+          "allowanceCode"
+        ]
+      },
+      "InvoiceLevelCharge": {
+        "type": "object",
+        "description": "Charges on Invoice/Note Level",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount excluding VAT. On invoiceLevelCharges / noteLevelCharges: this document-level charge amount. On lineCharges: this line's charge amount. Not a per-tax-rate total of all lines.",
+            "format": "double"
+          },
+          "taxRate": {
+            "type": "integer",
+            "description": "Do not send on invoice/note-level lists. Derived from taxType (S = 5, E/O/Z/AE = 0). Ignored if provided. On lineCharges, omit or pass the line taxPercentage.",
+            "format": "int32"
+          },
+          "taxType": {
+            "type": "string",
+            "description": "PINT AE VAT category for invoice/note-level charges. Required on invoiceLevelCharges / noteLevelCharges. Ignored on lineCharges (the line taxType applies). Allowed: S, E, O, AE, Z. N (margin scheme) is not allowed (ibr-114-ae). Must match a line taxType on the same document. E requires exemptionCode. Z/AE do not.",
+            "enum": [
+              "S",
+              "E",
+              "O",
+              "AE",
+              "Z"
+            ]
+          },
+          "exemptionCode": {
+            "type": "string",
+            "description": "The exemption code for zero or exempted tax rate that granted Charge"
+          },
+          "chargeCode": {
+            "type": "string",
+            "description": "<b>Required</b> Charge Code based on UNTDID 7161 code list, can be obtained <br>using lookups API"
+          }
+        },
+        "required": [
+          "amount",
+          "taxType",
+          "chargeCode"
+        ]
+      },
+      "InvoiceLevelPrepaymentDetails": {
+        "type": "object",
+        "description": "Invoice Level Prepayment",
+        "properties": {
+          "prepaymentInvoiceRef": {
+            "type": "string",
+            "description": "Preceding advance tax invoice number (PINT IBT-025)."
+          },
+          "invoiceDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Issue date of the preceding advance tax invoice (PINT IBT-026)."
+          }
+        },
+        "required": [
+          "prepaymentInvoiceRef",
+          "invoiceDate"
+        ]
+      },
+      "JsonObject": {
+        "type": "object",
+        "description": "Generic free-form JSON object.",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "Arbitrary JSON value."
+          }
+        }
+      },
+      "OutwardInvoice": {
+        "type": "object",
+        "description": "<b>Upload Outward Invoice : </b><br> 1.All totals on invoice level can be rounded optionally to number of decimals of country base currency<br> 2.For lines level, amounts must be passed with full fractions (up to 7) regardless of currency decimals <br> 3.Any rounding should follow half-up mode",
+        "properties": {
+          "invoiceNumber": {
+            "type": "string",
+            "description": "Invoice Number/Reference as exists on customer systems, must be <u>unique</u> in case same invoice number provided for another invoice the new one will be rejected following duplicateMode"
+          },
+          "identifierCode": {
+            "type": "string",
+            "description": "Corporate Identification Code Registered previously in InvoiceQ"
+          },
+          "poReference": {
+            "type": "string",
+            "description": "Purchase Order Reference Number"
+          },
+          "currencyIsoCode": {
+            "type": "string",
+            "description": "Currency code to be used for currency identifiers and tags for all amounts within the invoice, <br> <u>alpha iso code</u> as described in the [ISO 4217](https://www.iban.com/currency-codes)",
+            "enum": [
+              "JOD",
+              "USD",
+              "SAR",
+              "EGP",
+              "AED",
+              "BHD",
+              "QAR",
+              "EUR",
+              "KWD",
+              "OMR",
+              "YER",
+              "IQD",
+              "INR",
+              "HKD",
+              "GBP",
+              "CHF",
+              "SEK"
+            ]
+          },
+          "invoiceType": {
+            "type": "string",
+            "description": "Invoice type. Allowed values: STANDARD, SELF_BILLING, COMMERCIAL. Defaults to STANDARD when not provided.",
+            "enum": [
+              "STANDARD",
+              "SELF_BILLING",
+              "COMMERCIAL"
+            ]
+          },
+          "duplicateMode": {
+            "type": "string",
+            "description": "How invoiceq would handle the duplicates, by default this would be REJECT_WITH_FAILURE mode <br> <b>REJECT_WITH_FAILURE</b>: incase same document already uploaded, invoiceq would reject the new request with Generic error and HTTP 400<br> <b>RETRIEVE_DUPLICATE_DETAILS</b>: incase same document already uploaded, invoiceq would response with http 208 along with providing the uploaded document details in the body without the generated PDF/XML/QR",
+            "enum": [
+              "REJECT_WITH_FAILURE",
+              "RETRIEVE_DUPLICATE_DETAILS"
+            ]
+          },
+          "responseTemplate": {
+            "type": "string",
+            "description": "The response type you need to be received, default is PDF_A3, <br> XML only functional incase TAX Authority enabled",
+            "enum": [
+              "PDF_A3",
+              "XML",
+              "QR",
+              "NONE",
+              "QRANDXML"
+            ]
+          },
+          "issueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z <br> incase not provided will be stored with value same as issueDate"
+          },
+          "supplyDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "<u>Conditional</u> <br>must be provided for Normal Invoices, incase not provided will be copied from issueDate tag <br>zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z"
+          },
+          "supplyEndDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "<u>Conditional</u> <br>must be provided for invoices related supplies over period<br>zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z"
+          },
+          "customerInfo": {
+            "$ref": "#/components/schemas/CustomerInfo"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            },
+            "description": "List of products/services"
+          },
+          "customFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomAttribute"
+            },
+            "description": "List of custom fields identified using the portal, <br>1.Must not contain duplicate attributeCode, <br> 2.Required/Optional will be validated based on definition in the portal"
+          },
+          "totalDiscountAmount": {
+            "type": "number",
+            "description": "Total discount given to customer, if no discount to be passed as zero. This is the summation of all discounts provided on the product lines only.",
+            "format": "double"
+          },
+          "totalInvoiceAmount": {
+            "type": "number",
+            "description": "Total invoice amount including VAT, after line discounts, line allowances/charges, and invoice-level allowances/charges. Amounts may be rounded to the number of decimals of the country base currency.",
+            "format": "double"
+          },
+          "totalNetAmount": {
+            "type": "number",
+            "description": "Total net amount the customer needs to pay, including taxes and after discounts. totalNetAmount = totalInvoiceAmount - totalAdvancedPaidAmount. Amounts may be rounded to the number of decimals of the country base currency.",
+            "format": "double"
+          },
+          "totalAdvancedPaidAmount": {
+            "type": "number",
+            "description": "Sum of amounts paid in advance on this invoice (PINT IBT-113). Optional; omit or pass zero when none. totalNetAmount = totalInvoiceAmount - totalAdvancedPaidAmount. Do not send together with invoicePrepaymentDetails (FTA two-invoice advance).",
+            "format": "double"
+          },
+          "payableRoundingAmount": {
+            "type": "number",
+            "description": "Payable Rounding Amount",
+            "format": "double"
+          },
+          "invoiceLevelAllowances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelAllowance"
+            },
+            "description": "Document-level allowances (PINT Invoice/AllowanceCharge). Amounts excluding VAT."
+          },
+          "invoiceLevelCharges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelCharge"
+            },
+            "description": "Document-level charges (PINT Invoice/AllowanceCharge). Amounts excluding VAT."
+          },
+          "invoicePrepaymentDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelPrepaymentDetails"
+            },
+            "description": "Optional references to previously issued advance tax invoices (FTA §17.1). Each entry becomes a preceding invoice reference (IBT-025 / IBT-026). Only prepaymentInvoiceRef and invoiceDate are used. Do not send together with totalAdvancedPaidAmount."
+          },
+          "totalTaxAmount": {
+            "type": "number",
+            "description": "Total tax amount collected from customer, if no tax to be passed as zero, it is possible to have tax as zeros in product list while it has value here. <br>In case discount on product level this should be the sum up of all discounts provided in product level<br> *totalTaxAmount can be rounded optionally to number of decimals of country base currency*",
+            "format": "double"
+          },
+          "totalTaxAmountInBaseCurrency": {
+            "type": "number",
+            "description": "Total tax amount in AED (UAE base currency). Required when the invoice currency is not AED. Amounts may be rounded to the number of decimals of the country base currency.",
+            "format": "double"
+          },
+          "exchangeRate": {
+            "type": "number",
+            "description": "Required when the invoice currency is not AED. Exchange rate from invoice currency to AED.",
+            "format": "double"
+          },
+          "isExportInvoice": {
+            "type": "boolean",
+            "description": "Set true when supplying goods/services to a non-UAE buyer. Export invoices relax domestic UAE buyer rules (TRN, TL/EID/PAS/CD, emirate provinceCode). customerInfo.deliveryAddress is required for export only when the deliver-to country is not AE/ARE. When neither customerInfo.peppolParticipantId nor customerInfo.peppolSchemaId is provided, InvoiceQ automatically applies EndpointID 9900000099 with scheme ID 0235."
+          },
+          "isSummaryInvoice": {
+            "type": "boolean",
+            "description": "The invoice is issued for sales occurring over a period of time and occurs for some types of invoicing arrangements between seller and buyer, require supply date and supply end date, default is false"
+          },
+          "isDeemedSupply": {
+            "type": "boolean",
+            "description": "Whether the invoice relates to a deemed supply under UAE VAT rules. Defaults to false. When neither customerInfo.peppolParticipantId nor customerInfo.peppolSchemaId is provided, InvoiceQ automatically applies EndpointID 9900000097 with scheme ID 0235."
+          },
+          "isDisclosedAgentBilling": {
+            "type": "boolean",
+            "description": "Whether the invoice uses disclosed agent billing. Defaults to false."
+          },
+          "isContinuousSupply": {
+            "type": "boolean",
+            "description": "Whether the invoice covers a continuous supply over a period. Requires supplyDate and supplyEndDate. Defaults to false."
+          },
+          "isFreeTradeZone": {
+            "type": "boolean",
+            "description": "Whether the supply is from or to a designated free trade zone. Defaults to false."
+          },
+          "isEcommerce": {
+            "type": "boolean",
+            "description": "Whether the invoice is an e-commerce transaction. Defaults to false. When true, customerInfo.deliveryAddress is required (street and city; emirate provinceCode when delivery country is AE/ARE)."
+          },
+          "isMarginScheme": {
+            "type": "boolean",
+            "description": "Whether the invoice uses the profit margin scheme. Defaults to false."
+          },
+          "paymentMeans": {
+            "type": "integer",
+            "description": "Payment means for the invoice. Only cash is supported today — always send UN/ECE 4461 code 10.",
+            "enum": [
+              "10"
+            ],
+            "format": "int32"
+          },
+          "principalTaxNumber": {
+            "type": "string",
+            "description": "Principal tax registration number for disclosed agent billing. Must be exactly 15 digits, start with 1, and end with 03."
+          },
+          "invoiceAttachmentBase64": {
+            "type": "string",
+            "description": "Supporting document jpg or png image file to be shared with customer, should be Base64 string"
+          },
+          "invoiceAttachmentFileType": {
+            "type": "string",
+            "description": "Supporting document file type, must be provided incase invoiceAttachmentBase64 has value, <u>note this is not the requested response format</u>",
+            "enum": [
+              "JPEG",
+              "PNG",
+              "JPG",
+              "PDF"
+            ]
+          },
+          "extraPrintDetails": {
+            "type": "string",
+            "description": "Extra print details to be used integrated layout."
+          },
+          "narration": {
+            "type": "string",
+            "description": "Invoice note (PINT IBT-022). Use this for FTA §17.1 when linking a final invoice to an advance tax invoice in prose, instead of or in addition to invoicePrepaymentDetails."
+          }
+        },
+        "required": [
+          "invoiceNumber",
+          "currencyIsoCode",
+          "issueDate",
+          "products",
+          "totalDiscountAmount",
+          "totalInvoiceAmount",
+          "totalNetAmount",
+          "totalTaxAmount",
+          "paymentMeans"
+        ]
+      },
+      "OutwardInvoiceList": {
+        "type": "object",
+        "description": "Outward Invoice Response",
+        "properties": {
+          "invoiceqReference": {
+            "type": "string"
+          },
+          "orgKey": {
+            "type": "string",
+            "description": "Corporate Key"
+          },
+          "invoiceNumber": {
+            "type": "string",
+            "description": "Invoice Number as exists on customer systems , incase duplicate will be rejected"
+          },
+          "base64PDF": {
+            "type": "string",
+            "description": "Generated Invoice PDF"
+          },
+          "encodedXml": {
+            "type": "string",
+            "description": "Generated Xml Invoice"
+          },
+          "qrCode": {
+            "type": "string",
+            "description": "Generated Qr Code"
+          },
+          "currencyIsoCode": {
+            "type": "string",
+            "enum": [
+              "JOD",
+              "USD",
+              "SAR",
+              "EGP",
+              "AED",
+              "BHD",
+              "QAR",
+              "EUR",
+              "KWD",
+              "OMR",
+              "YER",
+              "IQD",
+              "INR",
+              "HKD",
+              "GBP",
+              "CHF",
+              "SEK"
+            ]
+          },
+          "totalNetAmount": {
+            "type": "number",
+            "description": "Total net amount the customer needs to pay, including taxes and after discounts. totalNetAmount = totalInvoiceAmount.",
+            "format": "double"
+          },
+          "totalInvoiceAmount": {
+            "type": "number",
+            "description": "Total invoice amount including tax, after discounts.",
+            "format": "double"
+          },
+          "totalDiscountAmount": {
+            "type": "number",
+            "description": "Total discount given to customer, if no discount to be passed as zero, it is possible to have discount as zeros in product list while it has value here. In case discount on product level this should be the sum up of all discounts provided in product level",
+            "format": "double"
+          },
+          "totalTaxAmount": {
+            "type": "number",
+            "description": "Total tax amount collected from customer, if no tax to be passed as zero, it is possible to have tax as zeros in product list while it has value here. In case discount on product level this should be the sum up of all discounts provided in product level",
+            "format": "double"
+          },
+          "issueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z"
+          },
+          "supplyDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "zoned datetime for the suuply date or supply start date incase of supply over period <br>format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z"
+          },
+          "supplyEndDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "[Conditional] - Required for of supply over periods <br>zoned datetime format yyyy-mm-ddThh24:mi:ssZ, i.e. 2021-07-01T18:23:00Z"
+          },
+          "narration": {
+            "type": "string",
+            "description": "Service details or narrations to be printed in customer invoice"
+          },
+          "customerInfo": {
+            "$ref": "#/components/schemas/CustomerInfo"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            },
+            "description": "List of products/services"
+          },
+          "integrationStatus": {
+            "type": "string",
+            "description": "Third Party Integration Status"
+          }
+        },
+        "required": [
+          "orgKey",
+          "invoiceNumber",
+          "currencyIsoCode",
+          "totalNetAmount",
+          "totalInvoiceAmount",
+          "totalDiscountAmount",
+          "totalTaxAmount",
+          "issueDate",
+          "narration",
+          "products"
+        ]
+      },
+      "OutwardInvoiceOperationResponse": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "body": {
+            "$ref": "#/components/schemas/OutwardInvoiceResponse"
+          }
+        }
+      },
+      "OutwardInvoiceResponse": {
+        "type": "object",
+        "description": "Invoice response would be provided for successful uploads, incase of any failuer this would be null",
+        "properties": {
+          "duplicateInvoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutwardInvoiceList"
+            },
+            "description": "Previously reported invoices with same number"
+          },
+          "invoiceqReference": {
+            "type": "string",
+            "description": "InvoiceQ reference for uploaded receipt"
+          },
+          "invoiceNumber": {
+            "type": "string",
+            "description": "Invoice Number provided by customer on creation request"
+          },
+          "pdfFileName": {
+            "type": "string",
+            "description": "Generated Invoice PDF Filename"
+          },
+          "base64PDF": {
+            "type": "string",
+            "description": "Generated Invoice PDF"
+          },
+          "encodedXml": {
+            "type": "string",
+            "description": "Generated Xml Invoice"
+          },
+          "qrCode": {
+            "type": "string",
+            "description": "Generated Qr Code"
+          },
+          "directLink": {
+            "type": "string",
+            "description": "Invoice Download Link"
+          },
+          "submittedPayableAmount": {
+            "type": "number",
+            "description": "Submitted Payable Amount for Tax Authority",
+            "format": "double"
+          },
+          "submittedTaxAmount": {
+            "type": "number",
+            "description": "Submitted Tax Amount for Tax Authority",
+            "format": "double"
+          },
+          "submittedPayableRoundingAmount": {
+            "type": "number",
+            "description": "Submitted Payable Rounding Amount for Tax Authority",
+            "format": "double"
+          },
+          "integrationStatus": {
+            "type": "string",
+            "description": "Third Party Integration Status"
+          }
+        }
+      },
+      "OutwardInvoiceSearchResponse": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "body": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutwardInvoiceList"
+            }
+          },
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSize": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "string",
+            "description": "Product unique identifier, could be barcode"
+          },
+          "productName": {
+            "type": "string",
+            "description": "<u>Required</u> Product name as it would show in generated invoice"
+          },
+          "description": {
+            "type": "string",
+            "description": "Product description as it would show in generated invoice"
+          },
+          "unitType": {
+            "type": "string",
+            "description": "Unit of measurement code for the line. Recommended to follow UN/ECE Recommendation 20."
+          },
+          "commodityCode": {
+            "type": "string",
+            "description": "Commodity classification for the item. Optional; when provided must be G (goods), S (services), or B (both). G or B requires hsCode. S or B requires serviceAccountingCode.",
+            "enum": [
+              "G",
+              "S",
+              "B"
+            ]
+          },
+          "hsCode": {
+            "type": "string",
+            "description": "Harmonized System (HS) code for goods. Required when commodityCode is G or B."
+          },
+          "serviceAccountingCode": {
+            "type": "string",
+            "description": "Service accounting code (SAC). Required when commodityCode is S or B."
+          },
+          "natureCode": {
+            "type": "string",
+            "description": "Nature of goods code for reverse-charge lines. Required when taxType is AE. Allowed values: DL8.48.8.2, DL8.48.8.1, DL8.48.3.1, DL8.48.3.2, DL8.48.3.3.",
+            "enum": [
+              "DL8.48.8.2",
+              "DL8.48.8.1",
+              "DL8.48.3.1",
+              "DL8.48.3.2",
+              "DL8.48.3.3"
+            ]
+          },
+          "standardItemId": {
+            "type": "string",
+            "description": "Standard item identifier (GTIN). Required when taxType is AE (reverse charge)."
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Line quantity. Must not be negative.",
+            "format": "double"
+          },
+          "unitCost": {
+            "type": "number",
+            "description": "Unit price excluding VAT. Must be greater than zero.",
+            "format": "double"
+          },
+          "discountAmount": {
+            "type": "number",
+            "description": "Price-level discount on this line (PINT Price/AllowanceCharge). Line-total excluding VAT. Omit or pass 0 when unused. Do not also send the same amount as lineAllowances.",
+            "format": "double"
+          },
+          "netAmount": {
+            "type": "number",
+            "description": "Line amount payable including VAT. Must equal ((quantity × unitCost) − discountAmount − Σ lineAllowances + Σ lineCharges) × (1 + (taxPercentage / 100)).",
+            "format": "double"
+          },
+          "lineAllowances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelAllowance"
+            },
+            "description": "Allowances on this line (PINT InvoiceLine/AllowanceCharge). Amounts excluding VAT. Distinct from discountAmount (price-level)."
+          },
+          "lineCharges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLevelCharge"
+            },
+            "description": "Charges on this line (PINT InvoiceLine/AllowanceCharge). Amounts excluding VAT."
+          },
+          "taxType": {
+            "type": "string",
+            "description": "PINT AE VAT category for the line. Allowed: S (standard 5%), E (exempt), O (out of scope), AE (reverse charge), Z (zero-rated), N (margin scheme). Margin scheme invoices require N on every line. Commercial (480) invoices allow O, E, or Z only. Non-commercial invoices must include at least one S, Z, AE, or N line (cannot be E/O-only).",
+            "enum": [
+              "S",
+              "E",
+              "O",
+              "AE",
+              "Z",
+              "N"
+            ]
+          },
+          "taxPercentage": {
+            "type": "integer",
+            "description": "VAT rate percent for the line. Must match taxType: S = 5, Z = 0, N > 0. For E, O, and AE use 0 unless otherwise required by the category rules.",
+            "format": "int32"
+          },
+          "lineTotalTaxAmount": {
+            "type": "number",
+            "description": "Line VAT amount in the invoice currency. Must be greater than zero for taxType S. Must be zero for taxType AE, Z, and N (and typically zero for E/O). For standard-rated lines: quantity * unitCost * (taxPercentage / 100).",
+            "format": "double"
+          },
+          "exemptionReasonCode": {
+            "type": "string",
+            "description": "VAT exemption reason code. Required only when taxType is E (exempt); use DL8.46.1–DL8.46.4 from '/api/external/v1/lookups/exemptions'. Do not send for Z (zero-rated), AE, S, O, or N."
+          },
+          "lineCustomFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomAttribute"
+            },
+            "description": "List of custom fields identified using the portal, <br>1.Must not contain duplicate attributeCode, <br> 2.Required/Optional will be validated based on definition in the portal"
+          }
+        },
+        "required": [
+          "productCode",
+          "productName",
+          "unitType",
+          "quantity",
+          "unitCost",
+          "netAmount",
+          "taxType",
+          "taxPercentage"
+        ]
+      },
+      "ResponseEnvelop": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "message": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "body": {
+            "$ref": "#/components/schemas/JsonObject"
+          },
+          "pagesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalSize": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "httpStatus": {
+            "type": "string",
+            "enum": [
+              "CONTINUE",
+              "SWITCHING_PROTOCOLS",
+              "PROCESSING",
+              "CHECKPOINT",
+              "OK",
+              "CREATED",
+              "ACCEPTED",
+              "NON_AUTHORITATIVE_INFORMATION",
+              "NO_CONTENT",
+              "RESET_CONTENT",
+              "PARTIAL_CONTENT",
+              "MULTI_STATUS",
+              "ALREADY_REPORTED",
+              "IM_USED",
+              "MULTIPLE_CHOICES",
+              "MOVED_PERMANENTLY",
+              "FOUND",
+              "MOVED_TEMPORARILY",
+              "SEE_OTHER",
+              "NOT_MODIFIED",
+              "USE_PROXY",
+              "TEMPORARY_REDIRECT",
+              "PERMANENT_REDIRECT",
+              "BAD_REQUEST",
+              "UNAUTHORIZED",
+              "PAYMENT_REQUIRED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "METHOD_NOT_ALLOWED",
+              "NOT_ACCEPTABLE",
+              "PROXY_AUTHENTICATION_REQUIRED",
+              "REQUEST_TIMEOUT",
+              "CONFLICT",
+              "GONE",
+              "LENGTH_REQUIRED",
+              "PRECONDITION_FAILED",
+              "PAYLOAD_TOO_LARGE",
+              "REQUEST_ENTITY_TOO_LARGE",
+              "URI_TOO_LONG",
+              "REQUEST_URI_TOO_LONG",
+              "UNSUPPORTED_MEDIA_TYPE",
+              "REQUESTED_RANGE_NOT_SATISFIABLE",
+              "EXPECTATION_FAILED",
+              "I_AM_A_TEAPOT",
+              "INSUFFICIENT_SPACE_ON_RESOURCE",
+              "METHOD_FAILURE",
+              "DESTINATION_LOCKED",
+              "UNPROCESSABLE_ENTITY",
+              "LOCKED",
+              "FAILED_DEPENDENCY",
+              "TOO_EARLY",
+              "UPGRADE_REQUIRED",
+              "PRECONDITION_REQUIRED",
+              "TOO_MANY_REQUESTS",
+              "REQUEST_HEADER_FIELDS_TOO_LARGE",
+              "UNAVAILABLE_FOR_LEGAL_REASONS",
+              "INTERNAL_SERVER_ERROR",
+              "NOT_IMPLEMENTED",
+              "BAD_GATEWAY",
+              "SERVICE_UNAVAILABLE",
+              "GATEWAY_TIMEOUT",
+              "HTTP_VERSION_NOT_SUPPORTED",
+              "VARIANT_ALSO_NEGOTIATES",
+              "INSUFFICIENT_STORAGE",
+              "LOOP_DETECTED",
+              "BANDWIDTH_LIMIT_EXCEEDED",
+              "NOT_EXTENDED",
+              "NETWORK_AUTHENTICATION_REQUIRED"
+            ]
+          }
+        }
+      },
+      "TaxCategoryDetails": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Tax category"
+          },
+          "tax": {
+            "type": "integer",
+            "description": "Tax percentage to be passed for other API",
+            "format": "int32"
+          }
+        }
+      },
+      "TaxListResponse": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "body": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxCategoryDetails"
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "channelId": {
+            "type": "string"
+          },
+          "expireOn": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "could be field name or GENERIC as per root cause of rejection"
+          },
+          "errorDescription": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
