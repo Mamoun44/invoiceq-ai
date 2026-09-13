@@ -1,0 +1,42 @@
+<button class="chat-fab" (click)="toggleChat()">
+  <span *ngIf="!isOpen">💬</span>
+  <span *ngIf="isOpen">✕</span>
+</button>
+
+<div class="chat-container" [class.open]="isOpen">
+  <div class="chat-header">
+    <div class="header-status">
+      <span class="status-indicator"></span>
+      <span>Invoice AI Validator</span>
+    </div>
+  </div>
+
+  <div class="chat-body">
+    <div *ngIf="messages.length === 0" class="empty-state">
+      Ask why the selected invoice failed and how to correct it.
+    </div>
+
+    <div
+      *ngFor="let msg of messages"
+      [ngClass]="{'msg-user': msg.sender === 'user', 'msg-bot': msg.sender === 'bot'}"
+      class="message-bubble"
+    >
+      {{ msg.text }}
+      <span *ngIf="msg.sender === 'bot' && isStreaming" class="cursor">|</span>
+    </div>
+  </div>
+
+  <div class="chat-form">
+    <div class="action-row">
+      <input
+        type="text"
+        [(ngModel)]="userQuery"
+        placeholder="Why did this invoice fail?"
+        (keyup.enter)="submitCheck()"
+      />
+      <button (click)="submitCheck()" [disabled]="!userQuery.trim() || isStreaming">
+        Send
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,29 @@
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: #ffffff;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.image-section {
+  max-width: 400px;
+  width: 80%;
+  margin: 0 auto;
+}
+
+.dashboard-image {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
