@@ -5,8 +5,9 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
+from analysis_tools import AnalysisResult
 from explanation_service import (
     ExplanationService,
     FailureExplanation,
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="InvoiceQ AI Explanation Service",
-    description="Explains failed InvoiceQ UAE invoices using Gemini and RAG.",
-    version="1.0.0",
+    description="Anonymous InvoiceQ integration help using rules and Gemini File Search.",
+    version="1.1.0",
 )
 
 
@@ -29,8 +30,14 @@ def root() -> RedirectResponse:
 
 
 class ExplainRequest(BaseModel):
-    invoice: dict[str, Any]
-    invoiceqError: dict[str, Any]
+    invoice: dict[str, Any] | None = Field(
+        default=None,
+        validation_alias=AliasChoices("invoice", "requestJson"),
+    )
+    invoiceqError: dict[str, Any] | None = Field(
+        default=None,
+        validation_alias=AliasChoices("invoiceqError", "responseJson"),
+    )
     question: str = Field(
         default="Why did this invoice fail?",
         min_length=1,
@@ -80,10 +87,32 @@ def explain_failure(
         raise
     except Exception:
         logger.exception("Failed to generate invoice explanation")
-
         raise HTTPException(
             status_code=502,
             detail="Unable to generate an InvoiceQ explanation.",
+        )
+
+
+@app.post(
+    "/ai/analyze",
+    response_model=AnalysisResult,
+)
+def analyze_integration_context(request: ExplainRequest) -> AnalysisResult:
+    """Expose the routed rule-chain result for testing and observability."""
+    try:
+        service = get_explanation_service()
+        return service.analyze_context(
+            request_json=request.invoice,
+            response_json=request.invoiceqError,
+            question=request.question,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Failed to analyze InvoiceQ integration context")
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to analyze the InvoiceQ integration context.",
         )
 
 
@@ -107,7 +136,7 @@ def stream_explanation(request: ExplainRequest) -> StreamingResponse:
         try:
             yield create_sse_event(
                 "status",
-                {"message": "Searching InvoiceQ documentation"},
+                {"message": "Analyzing the request and InvoiceQ documentation"},
             )
 
             for text in service.stream_explanation(

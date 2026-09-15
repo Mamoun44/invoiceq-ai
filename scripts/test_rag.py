@@ -12,7 +12,8 @@ from google.genai import types
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STORE_FILE = BASE_DIR / "store_name.txt"
-MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+load_dotenv(BASE_DIR / ".env")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 TIMEOUT_MS = int(os.getenv("GEMINI_TIMEOUT_MS", "120000"))
 
 
@@ -31,7 +32,6 @@ def run_test(label: str, request) -> bool:
 
 def main() -> int:
     print("TEST SCRIPT STARTED", flush=True)
-    load_dotenv(BASE_DIR / ".env")
 
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -69,7 +69,7 @@ def main() -> int:
                 temperature=0,
                 max_output_tokens=256,
                 thinking_config=types.ThinkingConfig(
-                    thinking_level=types.ThinkingLevel.MINIMAL,
+                    thinking_level=types.ThinkingLevel.LOW,
                 ),
             ),
         ),
@@ -95,7 +95,7 @@ def main() -> int:
             config=types.GenerateContentConfig(
                 temperature=0,
                 thinking_config=types.ThinkingConfig(
-                    thinking_level=types.ThinkingLevel.MINIMAL,
+                    thinking_level=types.ThinkingLevel.LOW,
                 ),
                 tools=[
                     types.Tool(
