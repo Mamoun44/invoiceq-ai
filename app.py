@@ -1,13 +1,18 @@
 import json
 import logging
+import os
 from functools import lru_cache
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import RedirectResponse, StreamingResponse
 from pydantic import AliasChoices, BaseModel, Field
 
 from analysis_tools import AnalysisResult
+from stored_invoice_service import (
+    InvoiceQuestion, InvoiceAnswer, InvoiceBackendError,
+    SpringInvoiceBackend, StoredInvoiceService,
+)
 from explanation_service import (
     ExplanationService,
     FailureExplanation,
@@ -162,3 +167,36 @@ def stream_explanation(request: ExplainRequest) -> StreamingResponse:
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# Path 2 has a separate access boundary and never uses the anonymous service.
+
+
+@lru_cache
+def get_stored_invoice_service() -> StoredInvoiceService:
+    from google import genai
+    from google.genai import types
+    from explanation_service import MODEL
+
+    backend_url = os.getenv("INVOICE_BACKEND_URL")
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not backend_url or not api_key:
+        raise InvoiceBackendError(503, "Stored invoice access is not configured.")
+    try:
+        backend = SpringInvoiceBackend(backend_url)
+    except ValueError as error:
+        raise InvoiceBackendError(503, "Stored invoice access is not configured.") from error
+    return StoredInvoiceService(backend, genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=60000)), MODEL)
+
+
+@app.post("/ai/invoices/query", response_model=InvoiceAnswer)
+def query_stored_invoices(request: InvoiceQuestion, authorization: str | None = Header(default=None)) -> InvoiceAnswer:
+    scheme, _, token = (authorization or "").partition(" ")
+    if scheme.lower() != "bearer" or not token or any(char.isspace() for char in token):
+        raise HTTPException(status_code=401, detail="Sign in to ask about stored invoices.", headers={"WWW-Authenticate": "Bearer"})
+    try:
+        return get_stored_invoice_service().ask(token, request.question)
+    except InvoiceBackendError as error:
+        raise HTTPException(status_code=error.status_code, detail=str(error)) from error
+    except Exception:
+        raise HTTPException(status_code=502, detail="Unable to answer the invoice question.")
