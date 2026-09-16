@@ -7,13 +7,13 @@
   <div class="chat-header">
     <div class="header-status">
       <span class="status-indicator"></span>
-      <span>Invoice AI Validator</span>
+      <span>InvoiceQ Assistant</span>
     </div>
   </div>
 
   <div class="chat-body">
     <div *ngIf="messages.length === 0" class="empty-state">
-      Ask why the selected invoice failed and how to correct it.
+      Ask about InvoiceQ fields and rules, or add invoice details to check a request or explain an error.
     </div>
 
     <div
@@ -27,11 +27,24 @@
   </div>
 
   <div class="chat-form">
+    <details class="invoice-details">
+      <summary>Add invoice details (optional)</summary>
+      <p>These details are included with each question until you clear them.</p>
+      <label for="guest-invoice-json">Invoice JSON</label>
+      <textarea id="guest-invoice-json" [(ngModel)]="invoiceJson" [disabled]="isStreaming" rows="4" placeholder="Paste your invoice request JSON" spellcheck="false"></textarea>
+      <label for="guest-error-json">Error response JSON</label>
+      <textarea id="guest-error-json" [(ngModel)]="errorJson" [disabled]="isStreaming" rows="4" placeholder="Paste the error response from InvoiceQ" spellcheck="false"></textarea>
+      <button type="button" class="clear-details" (click)="clearDetails()" [disabled]="isStreaming">Clear details</button>
+    </details>
+    <p *ngIf="inputError" class="input-error" role="alert">{{ inputError }}</p>
     <div class="action-row">
       <input
         type="text"
         [(ngModel)]="userQuery"
-        placeholder="Why did this invoice fail?"
+        placeholder="Ask about InvoiceQ…"
+        aria-label="Your question"
+        maxlength="2000"
+        [disabled]="isStreaming"
         (keyup.enter)="submitCheck()"
       />
       <button (click)="submitCheck()" [disabled]="!userQuery.trim() || isStreaming">

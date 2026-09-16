@@ -437,6 +437,10 @@ def fallback_intent(
             "invoice with id",
             "invoice id 0",
             "total amount i have",
+            "amount of my invoice",
+            "total on my invoices",
+            "total of my invoices",
+            "total for my invoices",
         )
     ):
         return IntentDecision(
@@ -453,7 +457,7 @@ def fallback_intent(
             intent="explain_error",
             reason="The user asks for the meaning of the supplied response.",
         )
-    if "why" in text and any(word in text for word in ("fail", "failed", "reject")):
+    if ("why" in text or "my invoice" in text or "this invoice" in text) and any(word in text for word in ("fail", "failed", "reject")):
         return IntentDecision(
             intent="explain_failure",
             reason="The user asks why the supplied request failed.",

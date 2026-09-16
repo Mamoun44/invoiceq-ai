@@ -11,6 +11,26 @@ from test_invoice_validation import valid_invoice
 
 
 class ValidationServiceTests(unittest.TestCase):
+    def test_guest_missing_details_requests_context_without_provider(self):
+        with patch.object(app, "get_explanation_service", side_effect=AssertionError("No provider needed")):
+            for question in ["My invoice failed", "Check this invoice JSON"]:
+                response = TestClient(app.app).post("/ai/explain/stream", json={"question": question})
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("Add invoice details", response.text)
+                self.assertIn("event: done", response.text)
+
+    def test_guest_amount_question_does_not_call_provider(self):
+        with patch.object(app, "get_explanation_service", side_effect=AssertionError("Must not call Gemini")):
+            response = TestClient(app.app).post("/ai/explain/stream", json={
+                "question": "what is the amount of my invoice",
+                "invoice": {"invoiceNumber": "example"},
+                "invoiceqError": {"httpStatus": 400},
+            })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Please sign in", response.text)
+        self.assertIn("event: done", response.text)
+        self.assertNotIn("event: status", response.text)
+
     def setUp(self):
         # No credentials, live Gemini requests, or InvoiceQ submissions.
         self.service = ExplanationService.__new__(ExplanationService)

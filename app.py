@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import RedirectResponse, StreamingResponse
 from pydantic import AliasChoices, BaseModel, Field
 
-from analysis_tools import AnalysisResult
+from analysis_tools import AnalysisResult, fallback_intent
 from stored_invoice_service import (
     InvoiceQuestion, InvoiceAnswer, InvoiceBackendError,
     SpringInvoiceBackend, StoredInvoiceService,
@@ -128,6 +128,21 @@ def create_sse_event(event: str, data: dict) -> str:
 
 @app.post("/ai/explain/stream")
 def stream_explanation(request: ExplainRequest) -> StreamingResponse:
+    # A clear account-data request needs no provider call or RAG configuration.
+    intent = fallback_intent(request.question, request.invoice, request.invoiceqError).intent
+    immediate_answer = None
+    if intent == "stored_invoice_query":
+        immediate_answer = "Please sign in under My company’s invoices to view your invoice amounts and totals. This chat helps with InvoiceQ integration questions."
+    elif request.invoice is None and request.invoiceqError is None:
+        if intent in {"explain_failure", "explain_error"}:
+            immediate_answer = "Please open Add invoice details and paste your invoice request JSON and the error response from InvoiceQ, then send your question again."
+        elif intent == "validate_request":
+            immediate_answer = "Please open Add invoice details and paste the invoice JSON you want me to check, then send your question again."
+    if immediate_answer:
+        return StreamingResponse(iter([
+            create_sse_event("token", {"text": immediate_answer}),
+            create_sse_event("done", {}),
+        ]), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
     try:
         service = get_explanation_service()
     except Exception:
@@ -186,7 +201,7 @@ def get_stored_invoice_service() -> StoredInvoiceService:
         backend = SpringInvoiceBackend(backend_url)
     except ValueError as error:
         raise InvoiceBackendError(503, "Stored invoice access is not configured.") from error
-    return StoredInvoiceService(backend, genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=60000)), MODEL)
+    return StoredInvoiceService(backend, genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=30000)), MODEL)
 
 
 @app.post("/ai/invoices/query", response_model=InvoiceAnswer)

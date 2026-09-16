@@ -21,8 +21,8 @@
   position: fixed;
   bottom: 92px;
   right: 24px;
-  width: 380px;
-  height: 520px;
+  width: min(440px, calc(100vw - 32px));
+  height: min(680px, calc(100dvh - 116px));
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -65,6 +65,7 @@
 }
 
 .chat-body {
+  min-height: 100px;
   flex: 1;
   padding: 16px;
   overflow-y: auto;
@@ -116,6 +117,9 @@
 }
 
 .chat-form {
+  max-height: 65%;
+  overflow-y: auto;
+  flex-shrink: 0;
   padding: 12px;
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
@@ -130,6 +134,7 @@
 }
 
 .input-row input, .action-row input {
+  min-width: 0;
   flex: 1;
   padding: 8px 10px;
   border: 1px solid #cbd5e1;
@@ -137,6 +142,14 @@
   font-size: 12px;
   outline: none;
 }
+
+.invoice-details { font-size: 13px; color: #334155; }
+.invoice-details summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
+.invoice-details p { color: #64748b; margin: 6px 0 10px; }
+.invoice-details label { display: block; margin: 10px 0 4px; }
+.invoice-details textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 70px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; font: 12px monospace; }
+.clear-details { margin-top: 8px; padding: 6px 10px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; }
+.input-error { color: #b91c1c; font-size: 13px; margin: 0; }
 
 .action-row button {
   background-color: #2563eb;

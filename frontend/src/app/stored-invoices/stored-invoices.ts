@@ -6,7 +6,7 @@ interface Session { accessToken: string; user: { email: string; role: string; co
 interface Answer {
   status: string; answer: string; explanationSource: string;
   tool?: { amountType?: string; statusScope?: string; statuses?: string[]; currency?: string; dateFrom?: string; dateTo?: string };
-  result?: { totals: { currency: string; amount: string; invoiceCount: number }[] };
+  result?: { totals: { currency: string; amount: string; invoiceCount: number; totalExcludingTax?: string | null; totalIncludingTax?: string | null; remainingPayable?: string | null; missingPreTaxCount?: number }[] };
 }
 
 @Component({
@@ -32,6 +32,7 @@ export class StoredInvoices {
       throw new Error(response.status === 401 ? 'Sign in again or check your email and password.' :
         response.status === 403 ? 'You do not have permission for this action.' :
         response.status === 429 ? 'Too many requests. Please wait and retry.' :
+        response.status === 409 ? 'Some matching invoices have legacy integration statuses. Ask your administrator to verify them before requesting all-status totals.' :
         'The service is unavailable or the request could not be completed. Please retry.');
     }
     return response;

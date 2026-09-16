@@ -13,7 +13,7 @@ from stored_invoice_service import (
 
 
 def access(company="A"):
-    return InvoiceAccess(corporationId=company, allowedTools=["get_invoice_amount", "get_invoice_totals"], allowedStatuses=["CLEARED", "CANCELLED"])
+    return InvoiceAccess(corporationId=company, allowedTools=["get_invoice_amount", "get_invoice_totals"], allowedStatuses=["CLEARED", "UNCLEARED", "PENDING"])
 
 
 def data(company="A"):
@@ -140,6 +140,104 @@ class StoredInvoiceTests(unittest.TestCase):
             response = TestClient(app.app).post("/ai/invoices/query", json={"question":"total including tax for invoice number 001"}, headers={"Authorization":"Bearer token"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["result"]["totals"][0]["amount"], "105.00")
+
+    def test_schema_survives_actual_sdk_serialization(self):
+        from google import genai
+        service = self.service(call())
+        with genai.Client(api_key="synthetic-test-key") as client:
+            service.client = client
+            with patch.object(client._api_client, "request", side_effect=RuntimeError("transport intercepted")) as transport:
+                with self.assertRaises(InvoiceBackendError):
+                    service.ask("fake-login-token", "Invoice number 001 total including tax")
+                request = transport.call_args.args[2]
+                config = request["generationConfig"]
+                self.assertNotIn("responseSchema", config)
+                self.assertFalse(config["responseJsonSchema"]["additionalProperties"])
+                self.assertNotIn("fake-login-token", str(request))
+
+    def test_provider_400_is_not_reported_as_overload_or_retried(self):
+        from google.genai import errors
+        service = self.service(call())
+        service.client.models.generate_content.side_effect = errors.ClientError(400, {"error": {"message": "invalid schema"}})
+        with self.assertRaises(InvoiceBackendError) as caught:
+            service.ask("token", "invoice amount")
+        self.assertEqual(caught.exception.status_code, 502)
+        self.assertIn("rejected", str(caught.exception))
+        self.assertEqual(service.client.models.generate_content.call_count, 1)
+        service.backend.execute.assert_not_called()
+
+    def test_transient_failure_retries_then_executes_once(self):
+        from google.genai import errors
+        service = self.service(call())
+        service.client.models.generate_content.side_effect = [errors.ServerError(503, {"error": {"message":"busy"}}), SimpleNamespace(parsed=call()), SimpleNamespace(text="AED 105.00")]
+        with patch("stored_invoice_service.time.sleep") as delay:
+            result = service.ask("token", "invoice amount")
+        self.assertEqual(result.status, "ok")
+        delay.assert_called_once_with(1)
+        service.backend.execute.assert_called_once()
+
+    def test_repeated_overload_is_bounded_and_quota_is_distinct(self):
+        from google.genai import errors
+        for code, expected, count in ((503, 503, 2), (429, 429, 1)):
+            service = self.service(call())
+            error_type = errors.ServerError if code == 503 else errors.ClientError
+            service.client.models.generate_content.side_effect = error_type(code, {"error": {"message":"unavailable"}})
+            with patch("stored_invoice_service.time.sleep"), self.assertRaises(InvoiceBackendError) as caught:
+                service.ask("token", "invoice amount")
+            self.assertEqual(caught.exception.status_code, expected)
+            self.assertEqual(service.client.models.generate_content.call_count, count)
+            service.backend.execute.assert_not_called()
+
+    def test_invalid_generated_company_override_still_rejected(self):
+        service = self.service({**call().model_dump(), "corporationId":"another-company"})
+        with self.assertRaises(InvoiceBackendError) as caught:
+            service.ask("token", "invoice amount")
+        self.assertEqual(caught.exception.status_code, 502)
+        service.backend.execute.assert_not_called()
+
+    def test_generic_totals_default_to_remaining_payable_including_tax(self):
+        query = InvoiceToolCall(tool="get_invoice_totals", statusScope="selected", statuses=["CLEARED"])
+        self.assertEqual(query.amountType, "remainingPayable")
+        service = self.service(query)
+        service.backend.execute.return_value = InvoiceData.model_validate({**data(), "amountType":"remainingPayable", "invoiceNumber":None, "totals":[{"currency":"AED","amount":"55.00","invoiceCount":1,"totalExcludingTax":"100.00","totalIncludingTax":"105.00","remainingPayable":"55.00"}]})
+        service.client.models.generate_content.side_effect = [SimpleNamespace(parsed=query), RuntimeError("offline")]
+        result = service.ask("token", "What is my total for CLEARED invoices?")
+        self.assertIn("55.00", result.answer)
+        self.assertIn("100.00", result.answer)
+        self.assertIn("105.00", result.answer)
+        self.assertIn("including tax", result.answer)
+        self.assertEqual(service.backend.execute.call_args.args[2].amountType, "remainingPayable")
+
+    def test_generic_totals_still_ask_for_statuses(self):
+        service = self.service(InvoiceToolCall(tool="get_invoice_totals"))
+        result = service.ask("token", "What is my total?")
+        self.assertEqual(result.status, "clarification_required")
+        self.assertIn("UNCLEARED", result.answer)
+        self.assertIn("including tax", result.answer)
+        service.backend.execute.assert_not_called()
+
+    def test_explicit_gross_totals_override_payable_default(self):
+        query = InvoiceToolCall(tool="get_invoice_totals", amountType="totalIncludingTax", statusScope="all")
+        self.assertEqual(query.amountType,"totalIncludingTax")
+
+    def test_old_integration_status_is_not_accepted(self):
+        for status in ("DRAFT", "REJECTED", "CANCELLED"):
+            query=InvoiceToolCall(tool="get_invoice_totals",statusScope="selected",statuses=[status])
+            with self.assertRaises(InvoiceBackendError):
+                self.backend.execute("token",access(),query)
+        self.backend._request.assert_not_called()
+
+    def test_missing_pretax_is_not_a_partial_total_or_assumed_vat_rate(self):
+        result = InvoiceData.model_validate({**data(), "amountType":"remainingPayable", "totals":[{"currency":"AED","amount":"55.00","invoiceCount":2,"totalExcludingTax":None,"totalIncludingTax":"105.00","remainingPayable":"55.00","missingPreTaxCount":1}]})
+        from stored_invoice_service import StoredInvoiceService
+        answer = StoredInvoiceService._answer(result, overview=True)
+        self.assertIn("unavailable", answer)
+        self.assertIn("105.00", answer)
+        self.assertIn("55.00", answer)
+        invalid = result.model_dump()
+        invalid["totals"][0]["totalExcludingTax"] = "50.00"
+        with self.assertRaises(ValidationError):
+            InvoiceData.model_validate(invalid)
 
 
 if __name__ == "__main__":
