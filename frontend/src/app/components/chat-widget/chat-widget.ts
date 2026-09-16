@@ -1,4 +1,4 @@
-import { Component, OnDestroy, ChangeDetectorRef, Input } from '@angular/core';
+import { Component, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -7,11 +7,6 @@ import {
   InvoiceAiService,
   InvoiceExplainRequest,
 } from '../../invoice-ai.service';
-
-interface InvoiceContext {
-  invoice: Record<string, unknown>;
-  invoiceqError: Record<string, unknown>;
-}
 
 interface ChatMessage {
   sender: 'user' | 'bot';
@@ -29,18 +24,9 @@ interface ChatMessage {
 })
 
 export class ChatWidgetComponent implements OnDestroy {
-  @Input() activeInvoice: InvoiceContext = {
-    invoice: {
-      invoiceNumber: 'INV-2026-991',
-      currencyIsoCode: 'AED',
-      supplier: { taxId: '' },
-    },
-    invoiceqError: {
-      httpStatus: 400,
-      valid: false,
-      errors: [{ reason: 'supplier.taxId', errorDescription: 'Missing tax identification number.' }],
-    },
-  };
+  invoiceJson = '';
+  errorJson = '';
+  inputError = '';
 
   userQuery = '';
   isOpen = false;
@@ -61,6 +47,19 @@ export class ChatWidgetComponent implements OnDestroy {
     const question = this.userQuery.trim();
     if (!question || this.isStreaming) return;
 
+    this.inputError = '';
+    let request: InvoiceExplainRequest;
+    try {
+      request = {
+        invoice: this.parseJson(this.invoiceJson, 'Invoice JSON'),
+        invoiceqError: this.parseJson(this.errorJson, 'Error response JSON'),
+        question,
+      };
+    } catch (error) {
+      this.inputError = error instanceof Error ? error.message : 'Please check your JSON.';
+      return;
+    }
+
     this.messages.push({ sender: 'user', text: question });
     const botMessage: ChatMessage = {
       sender: 'bot',
@@ -69,12 +68,6 @@ export class ChatWidgetComponent implements OnDestroy {
       aiText: '',
     };
     this.messages.push(botMessage);
-
-    const request: InvoiceExplainRequest = {
-      invoice: this.activeInvoice.invoice,
-      invoiceqError: this.activeInvoice.invoiceqError,
-      question,
-    };
 
     this.userQuery = '';
     this.isStreaming = true;
@@ -90,9 +83,28 @@ export class ChatWidgetComponent implements OnDestroy {
       },
       complete: () => {
         this.isStreaming = false;
-        this.cdr.detectChanges();
+        botMessage.statusText = '';
+        if (!botMessage.aiText) botMessage.aiText = 'No answer was received. Please try again.';
+        this.refreshMessage(botMessage);
       },
     });
+  }
+
+  clearDetails(): void {
+    this.invoiceJson = '';
+    this.errorJson = '';
+    this.inputError = '';
+  }
+
+  private parseJson(text: string, label: string): Record<string, unknown> | null {
+    if (!text.trim()) return null;
+    let value: unknown;
+    try { value = JSON.parse(text); }
+    catch { throw new Error(`${label} is not valid JSON. Check the quotes, commas, and brackets.`); }
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      throw new Error(`${label} must be a JSON object enclosed in { }.`);
+    }
+    return value as Record<string, unknown>;
   }
 
   private handleEvent(event: InvoiceAiEvent, message: ChatMessage): void {

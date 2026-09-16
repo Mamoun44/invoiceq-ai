@@ -405,6 +405,9 @@ request or response data. Do not add any other content.
             response_json=invoiceq_error,
             question=question,
         )
+        if analysis.intent == "stored_invoice_query":
+            yield "Please sign in under My company’s invoices to view your invoice amounts and totals. This chat helps with InvoiceQ integration questions."
+            return
         prompt = self._build_final_prompt(
             request_json=invoice,
             response_json=invoiceq_error,

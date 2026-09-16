@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export interface InvoiceExplainRequest {
-  invoice: Record<string, unknown>;
-  invoiceqError: Record<string, unknown>;
+  invoice: Record<string, unknown> | null;
+  invoiceqError: Record<string, unknown> | null;
   question: string;
 }
 
@@ -21,11 +21,21 @@ export class InvoiceAiService {
   streamExplanation(request: InvoiceExplainRequest): Observable<InvoiceAiEvent> {
     return new Observable((subscriber) => {
       const abortController = new AbortController();
+      let terminalEvent = false;
+      const timer = setTimeout(() => {
+        subscriber.error(new Error('The response took too long. Please try again.'));
+        abortController.abort();
+      }, 60000);
 
       void this.consumeStream(request, abortController.signal, (event) => {
+        terminalEvent = event.type === 'done' || event.type === 'error';
         subscriber.next(event);
         if (event.type === 'done' || event.type === 'error') {
           subscriber.complete();
+        }
+      }).then(() => {
+        if (!terminalEvent && !subscriber.closed) {
+          subscriber.error(new Error('The response was interrupted. Please try again.'));
         }
       }).catch((error: unknown) => {
         if (!abortController.signal.aborted) {
@@ -33,7 +43,10 @@ export class InvoiceAiService {
         }
       });
 
-      return () => abortController.abort();
+      return () => {
+        clearTimeout(timer);
+        abortController.abort();
+      };
     });
   }
 

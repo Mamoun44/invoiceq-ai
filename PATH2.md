@@ -24,9 +24,9 @@ Authorization: Bearer <real user access token>
 
 Only question is accepted in the body. Authentication is checked through Spring
 before the LLM is called. Company IDs are never accepted from model arguments.
-At most one data query and two Gemini calls are performed per request.
+At most one data query and three Gemini calls are performed per request (two routing attempts for transient provider failures, then one explanation).
 
-Questions with unclear amount types or identifiers trigger clarification.
+Totals return the before-tax total, tax-inclusive total and remaining payable amount together; no amount-type clarification is needed. Unclear individual invoice identifiers still trigger clarification.
 Always ask for status filters before calculating totals unless explicitly
 specified. "All my invoices" alone is not a choice of all statuses. No silent
 exclusion of cancelled/rejected invoices. No currency conversion.
@@ -49,11 +49,11 @@ GET `/internal/invoice-assistant/context`
 {
   "corporationId":"A",
   "allowedTools":["get_invoice_amount","get_invoice_totals"],
-  "allowedStatuses":["CLEARED","CANCELLED"]
+  "allowedStatuses":["CLEARED","UNCLEARED","PENDING"]
 }
 ```
 
-The status names are examples; return your actual allowed database codes.
+These integration-status values are documented in InvoiceQ UAE Swagger. They are not payment statuses.
 
 POST `/internal/invoice-assistant/amount`
 
@@ -110,8 +110,7 @@ before sending any result to Gemini. Spring still owns enforcement in the query.
 Response includes answer, tool (applied arguments), result and explanationSource.
 Render structured amounts/currencies and filters as the authoritative values.
 LLM prose is supplementary and can be inaccurate. Final-generation outages
-preserve data and return template text. Routing failures return 503 and backend
-failures return 502. Never display a service failure as an invoice balance of zero.
+preserve data and return template text. Routing distinguishes provider quota (429), temporary provider failures after a bounded retry (503), timeout (504), and rejected configuration or invalid model output (502). Backend failures return 502. Never display a service failure as an invoice balance of zero.
 
 ## Configuration and deployment
 
@@ -131,3 +130,39 @@ restricted operations, ambiguous inputs, mixed currencies, outages, and the API.
 They do not prove real database isolation. Before enabling production, test the
 Spring implementation with invoice 001 in both companies, company B data queried
 by company A, expired sessions, unauthorized roles and independent totals.
+
+
+## Router schema compatibility
+
+The router uses response_json_schema with InvoiceToolCall.model_json_schema().
+Using response_schema with this strict Pydantic model caused Gemini to reject
+additional_properties with HTTP 400; older code incorrectly wrapped that as 503.
+Local validation still rejects extra tool arguments, including company overrides.
+Logs include provider status/error type only, not tokens, invoice data, or raw
+provider exception text. A successful local SDK serialization test does not prove
+provider acceptance; test the live routing call separately after schema changes.
+
+## Totals overview and existing records
+
+Each currency row now includes totalExcludingTax, totalIncludingTax,
+remainingPayable and missingPreTaxCount, alongside the compatible amount field.
+The primary amount defaults to remainingPayable, but all three amounts are
+returned regardless of that selection. Remaining payable already includes tax
+and reflects recorded payments; never add VAT to it again.
+
+Spring migration V2 preserves V1 unchanged, retains original values in
+legacy_status, and copies only CLEARED into the corrected status field.
+Legacy REJECTED/DRAFT/CANCELLED require verification instead of automatic mapping.
+All-status totals that match unresolved rows return 409; selected integration
+statuses include only verified matching rows. An ADMIN can record a verified
+status via PATCH /api/admin/invoices/{id}/integration-status with {"status":"PENDING"}.
+Both role and company ownership are checked.
+
+A nullable total_excluding_tax column stores the actual before-tax amount.
+Populate totalExcludingTax when creating invoices. Old invoices remain NULL until
+their real values are supplied. If any matching row lacks that value, the entire
+currency's before-tax total is unavailable (not a partial sum or a guessed 5%
+calculation); the other two totals are still returned. Records are not connected
+to live payment synchronization, so balances reflect the data stored locally.
+
+Source: https://sandbox.invoiceq.com/swagger-ui/uae/specs/full.json

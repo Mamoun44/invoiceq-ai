@@ -10,20 +10,19 @@
   } @else {
     <div class="account"><span>{{ session()!.user.email }} · {{ session()!.user.role }}</span><button type="button" (click)="logout()" [disabled]="busy()">Sign out</button></div>
     <form (ngSubmit)="ask()">
-      <label>Ask about your invoices<textarea name="question" [(ngModel)]="question" required maxlength="2000" rows="3" placeholder="What is the total including tax for invoices with status CLEARED?"></textarea></label>
-      <p class="hint">Specify the amount type and invoice statuses for totals. If clarification is needed, update your full question and send it again.</p>
+      <label>Ask about your invoices<textarea name="question" [(ngModel)]="question" required maxlength="2000" rows="3" placeholder="what is the total on my invoices"></textarea></label>
       <button type="submit" [disabled]="busy() || !question.trim()">{{ busy() ? 'Checking your invoices…' : 'Ask' }}</button>
     </form>
     @if (answer(); as response) {
       <div class="result" aria-live="polite">
         <p>{{ response.answer }}</p>
         @if (response.result?.totals?.length) {
-          <table><caption>Amounts returned by the database</caption><thead><tr><th>Currency</th><th>Amount</th><th>Invoices</th></tr></thead><tbody>
-            @for (row of response.result!.totals; track row.currency) { <tr><td>{{ row.currency }}</td><td>{{ row.amount }}</td><td>{{ row.invoiceCount }}</td></tr> }
-          </tbody></table>
+          <table><caption>Amounts returned by the database</caption><thead><tr><th>Currency</th><th>Total before tax</th><th>Total including tax</th><th>Remaining to pay</th><th>Invoices</th></tr></thead><tbody>
+            @for (row of response.result!.totals; track row.currency) { <tr><td>{{ row.currency }}</td><td>{{ row.totalExcludingTax ?? 'Unavailable' }}</td><td>{{ row.totalIncludingTax ?? 'Unavailable' }}</td><td>{{ row.remainingPayable ?? 'Unavailable' }}</td><td>{{ row.invoiceCount }}</td></tr> }
+          </tbody></table><p class="hint">Remaining to pay includes tax and reflects payments recorded in the database. A missing before-tax total is shown as unavailable.</p>
         }
         @if (response.tool; as tool) {
-          <p class="hint">Amount: {{ tool.amountType === 'totalIncludingTax' ? 'Total including tax' : 'Remaining payable' }} · Statuses: {{ tool.statusScope === 'all' ? 'All statuses' : (tool.statuses?.join(', ') || 'Individual invoice') }}</p>
+          <p class="hint">Amount: {{ tool.amountType === 'totalIncludingTax' ? 'Total including tax' : 'Remaining payable (including tax)' }} · Statuses: {{ tool.statusScope === 'all' ? 'All statuses' : (tool.statuses?.join(', ') || 'Individual invoice') }}</p>
           @if (tool.dateFrom || tool.dateTo || tool.currency) { <p class="hint">{{ tool.dateFrom || 'Any start date' }} – {{ tool.dateTo || 'Any end date' }} · {{ tool.currency || 'Grouped by currency' }}</p> }
         }
       </div>
